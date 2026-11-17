@@ -1,0 +1,77 @@
+# 插件仓库发版时自动向插件中心发「加一版」的 PR。插件仓库里这样调（推 v* tag 时）：
+#
+#   on:
+#     push:
+#       tags: ['v*']
+#   jobs:
+#     catalog:
+#       uses: OnSet-VibeMotion/onset-plugins/.github/workflows/bump.yml@main
+#       with:
+#         id: my-publisher            # 插件 id，与 onset-station.json 的 id 相同
+#       secrets:
+#         token: ${{ secrets.ONSET_CATALOG_TOKEN }}
+#
+# token 是维护者自己的 GitHub token（经典 token 勾 public_repo，或细粒度 token 给 fork 与发 PR 的权限），
+# PR 用这个账号发出，所以账号要在这个插件的 maintainers 里。PR 照样要过 CI、要人合并。
+name: Bump a plugin in the catalog
+
+on:
+  workflow_call:
+    inputs:
+      id:
+        description: 插件 id
+        required: true
+        type: string
+      catalog:
+        description: 插件中心仓库
+        required: false
+        type: string
+        default: OnSet-VibeMotion/onset-plugins
+    secrets:
+      token:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.token }}
+      PLUGIN_ID: ${{ inputs.id }}
+      CATALOG: ${{ inputs.catalog }}
+      COMMIT: ${{ github.sha }}
+      REF: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+    steps:
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Fork and clone the catalog
+        run: |
+          gh auth setup-git
+          gh repo fork "$CATALOG" --clone --default-branch-only
+          # 以前 fork 过的话 fork 里的 main 可能是旧的：一律以插件中心现在的 main 为准。
+          cd onset-plugins
+          git fetch -q upstream main
+          git reset -q --hard upstream/main
+      - name: Add the version
+        working-directory: onset-plugins
+        run: |
+          node scripts/bump.mjs --id "$PLUGIN_ID" --commit "$COMMIT" ${REF:+--ref "$REF"} | tee bump.log
+          version="$(sed -n 's/^::notice::[^ ]* //p' bump.log)"
+          rm bump.log
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+      - name: Open the pull request
+        working-directory: onset-plugins
+        run: |
+          login="$(gh api user --jq .login)"
+          branch="bump/${PLUGIN_ID}-${VERSION}"
+          git config user.name "$login"
+          git config user.email "${login}@users.noreply.github.com"
+          git checkout -b "$branch"
+          git commit -qam "${PLUGIN_ID} ${VERSION}"
+          git push --force origin "$branch"
+          gh pr create --repo "$CATALOG" --head "${login}:${branch}" \
+            --title "${PLUGIN_ID} ${VERSION}" \
+            --body "由 ${GITHUB_REPOSITORY} 发版自动发出：commit ${COMMIT}${REF:+，tag ${REF}}。"

@@ -4,44 +4,136 @@
   "description": "编辑器提示用；以 scripts/validate.mjs 与客户端 flow/market.ts 的校验为准。",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "plugins"],
+  "required": [
+    "schema",
+    "plugins"
+  ],
   "properties": {
-    "$schema": { "type": "string" },
-    "schema": { "const": 1 },
+    "$schema": {
+      "type": "string"
+    },
+    "schema": {
+      "const": 1
+    },
     "plugins": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "name", "description", "source", "versions"],
+        "required": [
+          "id",
+          "name",
+          "description",
+          "source",
+          "maintainers",
+          "versions"
+        ],
         "properties": {
-          "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,39}$" },
-          "name": { "type": "string", "minLength": 1 },
-          "description": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{1,39}$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
           "author": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["name"],
-            "properties": { "name": { "type": "string", "minLength": 1 }, "url": { "type": "string", "pattern": "^https://" } }
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "url": {
+                "type": "string",
+                "pattern": "^https://"
+              }
+            }
           },
-          "license": { "type": "string" },
-          "tags": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-          "homepage": { "type": "string", "pattern": "^https://" },
-          "source": { "type": "string", "pattern": "^(github:[\\w.-]+/[\\w.-]+|https://[^#\\s]+)$" },
-          "icon": { "type": "string" },
-          "screenshots": { "type": "array", "items": { "type": "string" } },
+          "license": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "homepage": {
+            "type": "string",
+            "pattern": "^https://"
+          },
+          "source": {
+            "type": "string",
+            "pattern": "^(github:[\\w.-]+/[\\w.-]+|https://[^#\\s]+)$"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "screenshots": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "maintainers": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,38}$"
+            },
+            "description": "能改这条登记的 GitHub 账号"
+          },
+          "deprecated": {
+            "type": "string",
+            "description": "不再维护的原因；写了之后不再给新用户装"
+          },
           "versions": {
             "type": "array",
             "minItems": 1,
             "items": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["version", "commit"],
+              "required": [
+                "version",
+                "commit"
+              ],
               "properties": {
-                "version": { "type": "string", "pattern": "^v?\\d+\\.\\d+\\.\\d+" },
-                "ref": { "type": "string" },
-                "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
-                "requires_onset": { "type": "string", "pattern": "^v?\\d+\\.\\d+\\.\\d+" }
+                "version": {
+                  "type": "string",
+                  "pattern": "^v?\\d+\\.\\d+\\.\\d+"
+                },
+                "ref": {
+                  "type": "string"
+                },
+                "commit": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{40}$"
+                },
+                "requires_onset": {
+                  "type": "string",
+                  "pattern": "^v?\\d+\\.\\d+\\.\\d+"
+                },
+                "digest": {
+                  "type": "string",
+                  "pattern": "^sha256:[0-9a-f]{64}$",
+                  "description": "GitHub 压缩包的内容摘要，scripts/bump.mjs 会算"
+                },
+                "yanked": {
+                  "type": "string",
+                  "description": "撤回的原因；写了之后这一版不再给人装"
+                }
               }
             }
           }

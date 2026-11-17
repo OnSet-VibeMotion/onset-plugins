@@ -19,11 +19,12 @@
   "homepage": "https://github.com/you/onset-my-publisher",
   "source": "github:you/onset-my-publisher",
   "icon": "icons/my-publisher.png",
-  "versions": [
-    { "version": "0.1.0", "ref": "v0.1.0", "commit": "<40 位 commit>", "requires_onset": "2.0.0" }
-  ]
+  "maintainers": ["you"],
+  "versions": []
 }
 ```
+
+`versions` 先留空，再运行 `node scripts/bump.mjs --id my-publisher --commit <40 位 commit> --ref v0.1.0`。它会下载那个 commit 的压缩包，读出 version、requires_onset，算好 digest，再把这一版写进去。
 
 | 字段 | 要求 |
 |---|---|
@@ -33,20 +34,56 @@
 | `versions[].ref` | 给人看的 tag。写成 `v` 或数字开头时，CI 会核对 tag 指向这个 commit |
 | `versions[].version` | 与那个 commit 里清单的 `version` 相同 |
 | `versions[].requires_onset` | 与清单的 `requires.onset` 相同；没写就都不写 |
+| `versions[].digest` | GitHub 来源必须写，由 `scripts/bump.mjs` 算。用户电脑上没有 git 时，片场靠它下载 GitHub 的压缩包并核对内容 |
+| `maintainers` | 能改这条登记的 GitHub 账号，至少一个，新登记时要写上你自己 |
 | `icon` | 放在本仓库 `icons/` 下，PNG / JPEG / WebP，256×256，不超过 100 KB；不收 SVG |
 | `screenshots` | 可选，放在 `screenshots/<id>/` 下，每张不超过 500 KB |
 
 4. 本地先跑一遍：
 
 ```bash
+node scripts/format.mjs
 node scripts/validate.mjs --since origin/main
 ```
 
+## 谁能改哪条登记
+
+- **新登记**：只能登记你自己的仓库，或你作为公开成员所在组织的仓库，并且要把自己写进 `maintainers`。
+- **改或删已有的登记**：PR 作者必须在原来那条登记的 `maintainers` 里。要交给别人维护，就先由现在的维护者发 PR，把对方加进去。
+- 本仓库的成员不受这个限制，但照样要审。
+
+CI 按 PR 作者核对这些规则。
+
 ## 发新版本
 
-在这个插件的 `versions` 里**追加**一项，旧版本保留。客户端会在用户的片场版本满足 `requires_onset` 的版本里挑最新的一版。只更新到新片场才能用的版本时，用旧片场的用户还能装上一版。
+最省事的做法是在插件仓库里加一个工作流：推 tag 时自动向这里发 PR。
 
-不要改已有版本的 `commit`。要撤回某一版，请删掉那一项，并在 PR 里说明原因。
+```yaml
+# 插件仓库的 .github/workflows/onset-catalog.yml
+on:
+  push:
+    tags: ['v*']
+jobs:
+  catalog:
+    uses: OnSet-VibeMotion/onset-plugins/.github/workflows/bump.yml@main
+    with:
+      id: my-publisher
+    secrets:
+      token: ${{ secrets.ONSET_CATALOG_TOKEN }}
+```
+
+`ONSET_CATALOG_TOKEN` 是你自己的 GitHub token：经典 token 勾 `public_repo`，或细粒度 token 给 fork 和发 PR 的权限。PR 以你的账号发出，所以你要在 `maintainers` 里。PR 照样要过 CI、要人合并。
+
+也可以手动运行 `node scripts/bump.mjs --id <id> --commit <commit> --ref <tag>` 再发 PR。新版本**追加**在 `versions` 里，旧版本保留。客户端会在用户的片场版本满足 `requires_onset` 的版本里挑最新的一版。只更新到新片场才能用的版本时，用旧片场的用户还能装上一版。
+
+不要改已有版本的 `commit`，也不要删掉已经发出去的版本。
+
+## 撤回与停止维护
+
+- **撤回某一版**：给它加上 `"yanked": "原因"`。这一版不会再推荐给任何人；已经装了它的用户会看到这句原因，并被引导换到另一版能用的版本，哪怕那一版的版本号更低。
+- **不再维护**：给插件加上 `"deprecated": "原因"`，比如「改做 xxx 了」。不会再给新用户装；已经装了的照常能用，也会看到这句原因。
+
+这两种做法都比删掉登记好：删掉之后，装了它的人什么提示都收不到。
 
 ## 换仓库
 
