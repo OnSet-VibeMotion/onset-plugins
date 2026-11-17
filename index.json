@@ -1,0 +1,18 @@
+{
+  "$schema": "./schema/index.schema.json",
+  "schema": 1,
+  "plugins": [
+    {
+      "id": "xiaohongshu-upload",
+      "name": "小红书上传助手",
+      "description": "选择小红书账号，在片场客户端内自动上传成片、封面并填入文案，最后由你检查并发布。",
+      "author": { "name": "片场（OnSet）", "url": "https://github.com/OnSet-VibeMotion" },
+      "tags": ["发布", "小红书"],
+      "homepage": "https://github.com/OnSet-VibeMotion/onset-plugin-xiaohongshu",
+      "source": "github:OnSet-VibeMotion/onset-plugin-xiaohongshu",
+      "versions": [
+        { "version": "0.3.6", "ref": "main", "commit": "b1052acf829ee087a5488ac55dc48aa585f1b70a", "requires_onset": "0.1.0" }
+      ]
+    }
+  ]
+}

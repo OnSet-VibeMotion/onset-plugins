@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "片场插件中心目录",
+  "description": "编辑器提示用；以 scripts/validate.mjs 与客户端 flow/market.ts 的校验为准。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "plugins"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema": { "const": 1 },
+    "plugins": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "description", "source", "versions"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,39}$" },
+          "name": { "type": "string", "minLength": 1 },
+          "description": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "author": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name"],
+            "properties": { "name": { "type": "string", "minLength": 1 }, "url": { "type": "string", "pattern": "^https://" } }
+          },
+          "license": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+          "homepage": { "type": "string", "pattern": "^https://" },
+          "source": { "type": "string", "pattern": "^(github:[\\w.-]+/[\\w.-]+|https://[^#\\s]+)$" },
+          "icon": { "type": "string" },
+          "screenshots": { "type": "array", "items": { "type": "string" } },
+          "versions": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["version", "commit"],
+              "properties": {
+                "version": { "type": "string", "pattern": "^v?\\d+\\.\\d+\\.\\d+" },
+                "ref": { "type": "string" },
+                "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+                "requires_onset": { "type": "string", "pattern": "^v?\\d+\\.\\d+\\.\\d+" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

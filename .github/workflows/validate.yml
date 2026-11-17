@@ -1,0 +1,33 @@
+name: Validate catalog
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    # 每周把所有版本再取一遍：作者删了仓库、强推掉 commit 时尽早发现。
+    - cron: '17 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Validate changed versions
+        if: github.event_name == 'pull_request'
+        run: node scripts/validate.mjs --since "origin/${{ github.base_ref }}"
+      - name: Validate changed versions
+        if: github.event_name == 'push'
+        run: node scripts/validate.mjs --since "${{ github.event.before }}"
+      - name: Validate every version
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: node scripts/validate.mjs --all
