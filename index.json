@@ -22,7 +22,7 @@
       "versions": [
         {
           "version": "0.3.6",
-          "ref": "main",
+          "ref": "v0.3.6",
           "commit": "b1052acf829ee087a5488ac55dc48aa585f1b70a",
           "requires_onset": "0.1.0",
           "digest": "sha256:2f0464a52707b3c4ce53b3ed09c86e18afc97dd8ee36884b20309f7ea47d202d"
