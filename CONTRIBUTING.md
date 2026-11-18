@@ -65,14 +65,21 @@ on:
     tags: ['v*']
 jobs:
   catalog:
-    uses: OnSet-VibeMotion/onset-plugins/.github/workflows/bump.yml@main
+    uses: OnSet-VibeMotion/onset-plugins/.github/workflows/bump.yml@v1
     with:
       id: my-publisher
     secrets:
       token: ${{ secrets.ONSET_CATALOG_TOKEN }}
 ```
 
-`ONSET_CATALOG_TOKEN` 是你自己的 GitHub token：经典 token 勾 `public_repo`，或细粒度 token 给 fork 和发 PR 的权限。PR 以你的账号发出，所以你要在 `maintainers` 里。PR 照样要过 CI、要人合并。
+然后在插件仓库的 Settings → Secrets and variables → Actions 里新建 `ONSET_CATALOG_TOKEN`，填你自己的 GitHub token：经典 token 勾 `public_repo`，或细粒度 token 给 fork 和发 PR 的权限。PR 以你的账号发出，所以你要在 `maintainers` 里。PR 照样要过 CI、要人合并。没设这个 secret 时，工作流第一步就会停下，说明要设什么。
+
+你的 token 会经过哪些代码：
+
+- 写 `@v1`，用的是这个仓库 `v1` tag 上的 `bump.yml`，之后改 `main` 不会影响你。想完全自己把关，就钉到具体的 commit（`bump.yml@<40 位 commit>`）。
+- token 只交给 `bump.yml` 的第二个任务。那个任务不运行这个仓库里的任何脚本，只做 fork、放进改好的 `index.json`、提交、推送、开 PR，命令都写在 `bump.yml` 里。
+- 算版本的 `scripts/bump.mjs` 在第一个任务里跑，不带 token，交给第二个任务的只有 `index.json`。
+- `bump.yml` 有不兼容的改动时会发 `v2`，`v1` 不会被改成另一套行为。
 
 也可以手动运行 `node scripts/bump.mjs --id <id> --commit <commit> --ref <tag>` 再发 PR。新版本**追加**在 `versions` 里，旧版本保留。客户端会在用户的片场版本满足 `requires_onset` 的版本里挑最新的一版。只更新到新片场才能用的版本时，用旧片场的用户还能装上一版。
 
