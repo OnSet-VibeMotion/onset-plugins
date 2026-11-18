@@ -5,7 +5,7 @@
 #       tags: ['v*']
 #   jobs:
 #     catalog:
-#       uses: OnSet-VibeMotion/onset-plugins/.github/workflows/bump.yml@main
+#       uses: OnSet-VibeMotion/onset-plugins/.github/workflows/bump.yml@v1
 #       with:
 #         id: my-publisher            # 插件 id，与 onset-station.json 的 id 相同
 #       secrets:
@@ -13,6 +13,14 @@
 #
 # token 是维护者自己的 GitHub token（经典 token 勾 public_repo，或细粒度 token 给 fork 与发 PR 的权限），
 # PR 用这个账号发出，所以账号要在这个插件的 maintainers 里。PR 照样要过 CI、要人合并。
+#
+# token 只交给第二个任务，而且那个任务不运行插件中心仓库里的任何代码：
+# - prepare 不带 token。它取插件中心的 main、跑 scripts/bump.mjs，只把改好的 index.json 交出去。
+#   bump.mjs 只下载公开的压缩包，用不着 token；main 上的脚本以后不管怎么改，都碰不到作者的 token。
+# - pull-request 在另一台全新的机器上，只做 fork、放进那份 index.json、提交、推送、开 PR，
+#   用的命令都写在这份文件里。同一个任务里先跑别人的脚本再用 token 是不行的：脚本可以留下
+#   git hook、改 PATH，等 git push 时把 token 带走。
+# 插件仓库请写 @v1（或钉到具体 commit），不要写 @main：这份文件本身握着 token，不该随 main 变。
 name: Bump a plugin in the catalog
 
 on:
@@ -35,7 +43,51 @@ permissions:
   contents: read
 
 jobs:
-  bump:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+      base: ${{ steps.bump.outputs.base }}
+    steps:
+      # 没设 secret 时 GitHub 照样传进来一个空串，到开 PR 时才报「没登录」，看不出原因。这里先说清楚。
+      - name: Check the token
+        env:
+          HAS_TOKEN: ${{ secrets.token != '' }}
+        run: |
+          if [ "$HAS_TOKEN" != "true" ]; then
+            echo "::error::没有设置 ONSET_CATALOG_TOKEN：在插件仓库的 Settings → Secrets and variables → Actions 里新建这个 secret，填你自己的 GitHub token（经典 token 勾 public_repo）。你的账号要在插件中心这条登记的 maintainers 里。见 https://github.com/${CATALOG}/blob/main/CONTRIBUTING.md#发新版本"
+            exit 1
+          fi
+        shell: bash
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ inputs.catalog }}
+          ref: main
+          path: onset-plugins
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Add the version
+        id: bump
+        working-directory: onset-plugins
+        env:
+          PLUGIN_ID: ${{ inputs.id }}
+          COMMIT: ${{ github.sha }}
+          REF: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+        run: |
+          node scripts/bump.mjs --id "$PLUGIN_ID" --commit "$COMMIT" ${REF:+--ref "$REF"} | tee bump.log
+          echo "version=$(sed -n 's/^::notice::[^ ]* //p' bump.log)" >> "$GITHUB_OUTPUT"
+          echo "base=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          rm bump.log
+      - uses: actions/upload-artifact@v4
+        with:
+          name: catalog-index
+          path: onset-plugins/index.json
+          retention-days: 1
+
+  pull-request:
+    needs: prepare
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.token }}
@@ -43,25 +95,27 @@ jobs:
       CATALOG: ${{ inputs.catalog }}
       COMMIT: ${{ github.sha }}
       REF: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+      VERSION: ${{ needs.prepare.outputs.version }}
+      BASE: ${{ needs.prepare.outputs.base }}
     steps:
-      - uses: actions/setup-node@v6
+      - uses: actions/download-artifact@v4
         with:
-          node-version: 22
-      - name: Fork and clone the catalog
+          name: catalog-index
+          path: prepared
+      - name: Fork the catalog and apply the new version
         run: |
           gh auth setup-git
           gh repo fork "$CATALOG" --clone --default-branch-only
-          # 以前 fork 过的话 fork 里的 main 可能是旧的：一律以插件中心现在的 main 为准。
           cd onset-plugins
-          git fetch -q upstream main
-          git reset -q --hard upstream/main
-      - name: Add the version
-        working-directory: onset-plugins
-        run: |
-          node scripts/bump.mjs --id "$PLUGIN_ID" --commit "$COMMIT" ${REF:+--ref "$REF"} | tee bump.log
-          version="$(sed -n 's/^::notice::[^ ]* //p' bump.log)"
-          rm bump.log
-          echo "VERSION=$version" >> "$GITHUB_ENV"
+          # 以 prepare 用的那个 commit 为准：之后插件中心又合了别的登记，也不会被这份 index.json 盖掉。
+          git fetch -q upstream "$BASE"
+          git reset -q --hard "$BASE"
+          cp ../prepared/index.json index.json
+          changed="$(git status --porcelain)"
+          if [ "$changed" != " M index.json" ]; then
+            echo "::error::准备好的改动不只是 index.json：$changed"
+            exit 1
+          fi
       - name: Open the pull request
         working-directory: onset-plugins
         run: |
