@@ -109,6 +109,13 @@
           "commit": "8edfb432cd537f03461218a4b44328614aca38b0",
           "requires_onset": "0.1.0",
           "digest": "sha256:a093ed1b2d48fa5d9c6fff832d84d3cbe4119910eb494513a5d82004c1327c87"
+        },
+        {
+          "version": "0.1.7",
+          "ref": "v0.1.7",
+          "commit": "1246c3bced23ea2ad6ef87009f76c0a254cd26eb",
+          "requires_onset": "0.1.0",
+          "digest": "sha256:039c59e5b9d02a699e7a59e2a8b8d1b545cef54a309876f8624f51ccf0d73f28"
         }
       ]
     },
