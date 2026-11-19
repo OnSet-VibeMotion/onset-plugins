@@ -76,6 +76,33 @@
           "digest": "sha256:f4c20ca36a88a9148628813642afda148129eac2d5df2f0cf0fb6445147006ab"
         }
       ]
+    },
+    {
+      "id": "bilibili-upload",
+      "name": "B 站上传助手",
+      "description": "选择 B 站账号，在片场客户端内自动上传成片、封面并填入文案，最后由你检查并发布。",
+      "author": {
+        "name": "片场（OnSet）",
+        "url": "https://github.com/OnSet-VibeMotion"
+      },
+      "tags": [
+        "发布",
+        "B 站"
+      ],
+      "homepage": "https://github.com/OnSet-VibeMotion/onset-plugin-bilibili",
+      "source": "github:OnSet-VibeMotion/onset-plugin-bilibili",
+      "maintainers": [
+        "chouheiwa"
+      ],
+      "versions": [
+        {
+          "version": "0.1.1",
+          "ref": "v0.1.1",
+          "commit": "ec748008048046f6b8c1890356e191fcd88524c6",
+          "requires_onset": "0.1.0",
+          "digest": "sha256:b2a470ed99a3a1546b107a0a3a55abc90515ad614d363005c5729c63f9d9e06f"
+        }
+      ]
     }
   ]
 }
