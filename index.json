@@ -81,6 +81,13 @@
           "commit": "174d6382d062773271e00b7402de95709c3b0117",
           "requires_onset": "0.1.0",
           "digest": "sha256:f4c20ca36a88a9148628813642afda148129eac2d5df2f0cf0fb6445147006ab"
+        },
+        {
+          "version": "0.1.4",
+          "ref": "v0.1.4",
+          "commit": "c5ae5e939911920275d93d76ff0ba047a0294431",
+          "requires_onset": "0.1.0",
+          "digest": "sha256:836595c2cbb58b53d2c898b7629d65a5767b675ea78aa1776a34290f837c832c"
         }
       ]
     }
